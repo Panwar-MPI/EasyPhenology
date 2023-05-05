@@ -19,4 +19,5 @@ identifiers:
     value: 'https://github.com/Panwar-MPI/EasyPhenology'
     description: Github link
 license: GPL-3.0
+doi: 10.5281/zenodo.7898925
 date-released: '2023-05-05'
