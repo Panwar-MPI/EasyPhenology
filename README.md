@@ -118,7 +118,7 @@ Ready to use. Please contact if you are interested in sharing your results obtai
 
 ### Citation
 
-If you use our functions, please cite as with [DOI](https://zenodo.org/badge/551388146.svg)
+If you use our functions, please cite as https://zenodo.org/badge/551388146.svg
 
 ### References
 
