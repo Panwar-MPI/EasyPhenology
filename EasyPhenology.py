@@ -2,21 +2,36 @@
 
 '''
 This script contains functions for calculating Phnological transition dates (PTDS) that are Start of season (SOS), peak of season (POS),
-ens of season (EOS) and growing season length (GSL) using the daily timeseries of Gross primary
+end of season (EOS) and growing season length (GSL) using the daily timeseries of Gross primary
 production (GPP) in eddy covariance data.
 
 It can be applied to any other variable that is in daily time step, example GCC, LAI etc
 
 The script contains the following primary functions:
 
-    1. integral_smoothing(df): It smooths the noisy daily data of variable. Input is a dataframe with columns 'time',
-       'year', 'doy' and 'Var' in the given order. See the function for more information.
+     1. integral_smoothing(df,knots):  Smooths the daily value of GPP using our integral smoothing method.
+        This function requires dataframe with columns 'time', 'year', 'doy' and 'Var', in the given order.
+        These values are in daily time scale. integral_smoothing function smooths variable Var, in this case GPP.
+        First step is to interpolate the missing value. Second step is to calculate the cumulative of the variable
+        for each calender year. The cumulative of the variable is then smoothed. Taking the differentiation of smoothed 
+        cumulative value the smoothed value of Var is then obtained. Spline function is used for smoothing. 
+        spline is a piecewise regression, thereby it is sensitive to the number of knots, provided by the user. 
+        Usually, knots for an annual time series can vary from 8 to 15.
 
-    2. EasyPhenology(df, Threshold_value): It calculates PTDs using threshold method and
-       for first derivative method. The input is a dataframe with columns in order 'time', 'year', 'doy' and 'Var'. Here
-       Var is GPP, but one can use other vegetation index like NDVI, EVI, NEE...
 
-       Threshold values are provided by user that is 0<Threshold_value<1. The outputs are two dataframes df_pheno_crrct, df_smooth.
+     2. direct_smoothing(df,knots): Smooths the daily value of GPP using the traditional smoothing method.
+        This function requires dataframe with columns 'time', 'year', 'doy' and 'Var', in the given order.
+        This functions smooths variable Var, in this case GPP. The first step is to interpolate the missing value.
+        Then the smoothing of daily GPP signal is done for each calender month. Spline function is used for smoothing.
+         
+
+
+     3. EasyPhenology(df, Threshold_value, Smoothing,knots): It calculates PTDs using threshold and first derivative method. 
+       The input is a dataframe with columns in order 'time', 'year', 'doy' and 'Var'. Here Var is GPP. The Threshold_value 
+       is the fixed percentage of the annual maximum GPP and can vary from 0 to 1. If smoothing='True', integral smoothing is used,
+       if smoothing='False', then the direct smoothing method is used. 
+
+       The outputs are two dataframes df_pheno_out and df_smooth.
        The first dataframe contains columns "Year", "SOS", "POS", "EOS", "GSL", "SOS_der", "EOS_der" and "GSL_der".
        Here 'der' refers to PTDs calculated using derivative method, The second dataframe output is the smoothed value
        of dataframe using integral smoothing. Less than 0 values indicate days in the previous years and more than 365 value
@@ -26,7 +41,7 @@ Links:
 Gitlab: https://git.bgc-jena.mpg.de/apanwar/phenofeedbacks.git
 
 
-Contacts:
+Contact:
 Annu Panwar: apanwar@bgc-jena.mpg.de
 
 
@@ -48,13 +63,14 @@ warnings.simplefilter("ignore")
 with warnings.catch_warnings():
     warnings.simplefilter("ignore", category=RuntimeWarning)
 
+from tsmoothie.smoother import *
 
 
-def integral_smoothing(df):
+def integral_smoothing(df, knots):
 
     '''
 
-    Smooth the daily value of GPP using integral smoothing
+    Smooths the daily value of GPP using integral smoothing
 
     This function requires dataframe with columns 'time', 'year', 'doy' and 'Var', in the given order.
     These values should be in daily time scale. This functions smooths variable Var. First step is to interpolate
@@ -62,7 +78,7 @@ def integral_smoothing(df):
     cumulative Var is then smoothed. Taking the differentiation of smoothed cumulative value the smoothed value of
     Var is obtained.
 
-    In my case Var is GPP.
+    Here Var is GPP.
 
     Parameters
     ----------
@@ -117,10 +133,17 @@ def integral_smoothing(df):
             # Calculate Cumulative of Variable from raw Var values
             Var_cum = df_jyear['Var'].cumsum()
 
-            #Smooth the cumulative signal
+            #Smooth the cumulative signal with savgol
             #Cumulative curve is already quite smooth using different smoothing method can be tested
-            Var_cum_smooth= signal.savgol_filter(Var_cum, window_length=201, polyorder=3, mode="nearest")
-            Var_smooth=np.gradient(Var_cum_smooth,1)
+            #Var_cum_smooth= signal.savgol_filter(Var_cum, window_length=201, polyorder=3, mode="nearest")
+            #Var_smooth=np.gradient(Var_cum_smooth,1)
+
+
+            #smooth the signal with spline
+            smoother = SplineSmoother(n_knots=knots, spline_type='natural_cubic_spline')
+            smoother.smooth(Var_cum)
+            Var_cum_smooth=smoother.smooth_data[0]
+
 
             #Take the differentiation of the smoothed cumulative values
             Var_smooth=np.gradient(Var_cum_smooth,1)
@@ -147,7 +170,107 @@ def integral_smoothing(df):
 
 
 
-def EasyPhenology(df, Threshold_value):
+def direct_smoothing(df,knots):
+
+    '''
+
+        Smooths the daily value of GPP using the traditional smoothing method.
+        This function requires dataframe with columns 'time', 'year', 'doy' and 'Var', in the given order.
+        This functions smooths variable Var, in this case GPP. The first step is to interpolate the missing value.
+        Then the smoothing of daily GPP signal is done for each calender month. Spline function is used for smoothing. 
+
+
+     Parameters
+     ----------
+        df : a dataframe with columns : time, year, doy, Var. Var is the variable of interest
+
+     Returns
+        -------
+        df_smooth : the dataframe with columns time,year, doy and Var, where Var is the smoothed values
+
+    '''
+
+    # Create empty list for Var_smooth
+    Var_smooth=[]
+
+    # Create empty dataframe for smoothed values of Variable Var
+    df_smooth=pd.DataFrame()
+
+    # Total number of years in the site
+    Var_Years=np.unique(df['year'])
+
+    for j, element in enumerate(Var_Years):  # Loop for each year
+        df_jyear=df.loc[df['year'] ==Var_Years[j]] #the dataframe for year j
+
+        #Loop only if year has nan values for less than 50 days
+        if df_jyear['Var'].isnull().sum()<50:
+
+            # If it is not the first year (j>0) then also get the points where the threshold line crosses the previous year
+            if j>0:
+                df_jyear_p=df.loc[df['year'] ==Var_Years[j-1]] #the dataframe for year j-1
+
+            # If it is not the last year (j<len(Var_Years)-1) then also get the points where the threshold line crosses the next year
+            if j<len(Var_Years)-1:
+                df_jyear_n=df.loc[df['year'] ==Var_Years[j+1]] #the dataframe for year j+1
+
+            #For smoothing add 20 days before and after the year from the same year end points
+            if j>0:
+                df_jyear_b= df_jyear_p.tail(20)
+            else:
+                df_jyear_b= df_jyear.head(20)
+
+            if j<len(Var_Years)-1:
+                df_jyear_a= df_jyear_n.head(20)
+            else:
+                df_jyear_a= df_jyear.tail(20)
+
+
+            df_jyear=pd.concat([df_jyear_b, df_jyear, df_jyear_a ])
+
+            #interpolate if there are some nan
+            df_jyear['Var']=df_jyear['Var'].interpolate(method='linear')
+
+            # Calculate Cumulative of Variable from raw Var values
+            Var_cum = df_jyear['Var'].cumsum()
+
+            #Smooth the cumulative signal
+            #Cumulative curve is already quite smooth using different smoothing method can be tested
+            #Var_cum_smooth= signal.savgol_filter(Var_cum, window_length=201, polyorder=3, mode="nearest")
+            #Var_smooth=signal.savgol_filter(df_jyear['Var'], window_length=201, polyorder=3, mode="nearest")
+
+            #smooth the signal with spline
+            smoother = SplineSmoother(n_knots=knots, spline_type='natural_cubic_spline')
+            smoother.smooth(df_jyear['Var'])
+            Var_smooth=smoother.smooth_data[0]
+
+            #Take the differentiation of the smoothed cumulative values
+            #Var_smooth=np.gradient(Var_cum_smooth,1)
+            df_jyear['Var']=Var_smooth
+
+            #Remove extra 10 days before and after the yearly values
+            df_jyear=df_jyear.iloc[20:385,:]
+
+            #Store the smoothed values for each year
+            df_smooth = pd.concat([df_smooth, df_jyear])
+
+        else:
+
+            # if year has nan values for more than 50 days return all nan
+            df_jyear["Var"]=np.nan
+
+            #Store nan values for years with more than 50 days of nan values
+            df_smooth = pd.concat([df_smooth, df_jyear])
+
+    return df_smooth
+
+
+
+
+
+
+
+
+def EasyPhenology(df, Threshold_value, Smoothing,knots):
 
     '''
 
@@ -156,25 +279,37 @@ def EasyPhenology(df, Threshold_value):
     This function requires dataframe with columns 'time', 'year', 'doy' and 'Var'. These values
     should be in daily time scale. This function first smooths Var using integral smoothing and
     then the PTDs are produced.
+    The Threshold_value is the fixed percentage of the annual maximum GPP and can vary from 0 to 1. 
+    If smoothing='True', integral smoothing is used,
+    if smoothing='False', then the direct smoothing method is used. 
 
-    Parameters
-    ----------
-    df : a dataframe with columns : time, year, doy, Var. Var can be GPP, NEE, NDVI, GCC. Only GPP is tested
+    The outputs are two dataframes df_pheno_out and df_smooth.
+    The first dataframe contains columns "Year", "SOS", "POS", "EOS", "GSL", "SOS_der", "EOS_der" and "GSL_der".
+    Here 'der' refers to PTDs calculated using derivative method, The second dataframe output is the smoothed value
+    of dataframe using integral smoothing. Less than 0 values indicate days in the previous years and more than 365 value
+    indicates days in the next year. See the function for more information.
 
     Returns
     -------
-    Pheno_out_crrct : the dataframe with columns "Year", "SOS", "POS", "EOS", "GSL", "SOS_der", "EOS_der","GSL_der"
+    df_pheno_out: the dataframe with columns "Year", "SOS", "POS", "EOS", "GSL", "SOS_der", "EOS_der","GSL_der"
     df_smooth : the dataframe with columns time,year, doy and Var, where Var is the smoothed values
     '''
 
 
     # Define rows in the output dataframe, Pheno_out
     rows = []
+
     #number of total years
     Var_Years=np.unique(df['year'])
 
     #Smooth Var using integral_smoothing
-    df=integral_smoothing(df)
+    if  Smoothing == "True":
+        df=integral_smoothing(df, knots)
+
+    #Take the raw Var
+    if  Smoothing == "False":
+        df=direct_smoothing(df, knots)
+
 
     for j, element in enumerate(Var_Years): #Loop over years
 
@@ -313,7 +448,7 @@ def EasyPhenology(df, Threshold_value):
 
             if len(line_cross)>=2 and line_cross[0]<pos and line_cross[-1]>pos: # order sos-pos-eos
                 Var_1der=np.gradient(df_jyear.Var,1)
-                Var_1der= signal.savgol_filter(Var_1der, window_length=101, polyorder=3, mode="nearest")
+                Var_1der= signal.savgol_filter(Var_1der, window_length=201, polyorder=3, mode="nearest")
                 sos_der=Var_1der[0:pos].argmax() +1
                 eos_der=Var_1der.argmin() +1
 
@@ -331,26 +466,25 @@ def EasyPhenology(df, Threshold_value):
             rows.append([Var_Years[j], np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan])
 
         df_pheno = pd.DataFrame(rows, columns=["Year", "SOS", "POS", "EOS", "GSL", "SOS_der", "EOS_der","GSL_der"])
-        df_pheno_crrct = pd.DataFrame(rows, columns=["Year", "SOS", "POS", "EOS", "GSL", "SOS_der", "EOS_der","GSL_der"])
+        df_pheno_out = pd.DataFrame(rows, columns=["Year", "SOS", "POS", "EOS", "GSL", "SOS_der", "EOS_der","GSL_der"])
 
         #correct for order sos,pos,eos
 
         #eos<pos ( eos in next year), CASE 2
-        df_pheno_crrct['EOS'] = df_pheno_crrct.apply(lambda x: x['EOS'] +365 if x['EOS'] <= x['POS'] and x['EOS']< 9999 else x['EOS'], axis=1)
+        df_pheno_out['EOS'] = df_pheno_out.apply(lambda x: x['EOS'] +365 if x['EOS'] <= x['POS'] and x['EOS']< 9999 else x['EOS'], axis=1)
 
         #sos>pos ( sos in previous year), CASE 3
-        df_pheno_crrct['SOS'] = df_pheno_crrct.apply(lambda x: x['SOS'] -365 if x['SOS'] >= x['POS'] and x['SOS']< 9999 else x['SOS'], axis=1)
+        df_pheno_out['SOS'] = df_pheno_out.apply(lambda x: x['SOS'] -365 if x['SOS'] >= x['POS'] and x['SOS']< 9999 else x['SOS'], axis=1)
 
         #Replace default value of 9999 to nan
         #The dataframe with smoothed Var [ output 1]
-        df_pheno_crrct=df_pheno_crrct.replace({9999:np.nan})
+        df_pheno_out=df_pheno_out.replace({9999:np.nan})
 
         #The dataframe with smoothed Var [ output 2]
         df_smooth=df
 
-    return df_pheno_crrct, df_smooth
+    return df_pheno_out, df_smooth
 
-    #return df_pheno, df_pheno_crrct, df
 
 
 
