@@ -1,0 +1,22 @@
+# This CITATION.cff file was generated with cffinit.
+# Visit https://bit.ly/cffinit to generate yours today!
+
+cff-version: 1.2.0
+title: EasyPhenology
+message: >-
+  If you use this software, please cite it using the
+  metadata from this file.
+type: software
+authors:
+  - given-names: Annu
+    family-names: Panwar
+    email: apanwar@bgc-jena.mpg.de
+    name-particle: Annu
+    affiliation: 'Max Planck Institute for Biogeochemistry, Jena'
+    orcid: 'https://orcid.org/0000-0003-3821-0399'
+identifiers:
+  - type: url
+    value: 'https://github.com/Panwar-MPI/EasyPhenology'
+    description: Github link
+license: GPL-3.0
+date-released: '2023-05-05'
