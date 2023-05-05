@@ -67,9 +67,7 @@ df_smooth : the dataframe with columns time,year, doy and Var, where Var is the 
 EasyPhenology(df, Threshold_value, Smoothing,knots)
 ```
 
-This function produces phenological transition dates (PTDs) for a given dataframe(df) and a Threshold_value (0 to 1)
-
-It requires dataframe with columns in order 'time', 'year', 'doy' and 'Var'. These values should be in daily time scale. There are two methods to calculate PTDs. First is threshold method and second is the derivative method. The Threshold_value is the fixed percentage of the annual maximum GPP and can vary from 0 to 1.  The derivative method looks for the maximum and minimum rate of change of GPP that are SOS and EOS of the year. If smoothing='True', our integral smoothing method is used, if smoothing='False', then the traditional direct smoothing method is used. 
+This function produces phenological transition dates (PTDs) for a given dataframe(df) and a Threshold_value (0 to 1). It requires dataframe with columns in order 'time', 'year', 'doy' and 'Var'. These values should be in daily time scale. There are two methods to calculate PTDs. First is threshold method and second is the derivative method. The Threshold_value is the fixed percentage of the annual maximum GPP and can vary from 0 to 1.  The derivative method looks for the maximum and minimum rate of change of GPP that are SOS and EOS of the year. If smoothing='True', our integral smoothing method is used, if smoothing='False', then the traditional direct smoothing method is used. 
 
 
 Returns:
