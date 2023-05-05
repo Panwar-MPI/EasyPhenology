@@ -43,15 +43,17 @@ This project consists of one .py file called EasyPhenology. Easyphenology.py has
 ### Integral Smoothing
 
 ```python
-integral_smoothing(df)
+integral_smoothing(df, knots)
 ```
 
 Smooths the daily value of GPP using a novel approach called integral smoothing
 
-This function requires an input dataframe(df) with columns in order 'time', 'year', 'doy' and 'Var'. Here 'doy' is the day of year and 'Var' is the variable of interest (eg., GPP). The data must he in daily time scale. This functions smooths variable Var in four steps. First step is to interpolate the missing value. A simple before fill and linear interpolate function is used for filling the missing values. Second step is to calculatee cumulative of the variable Var for each year. In third step the cumulative curve is smoothed using Savitzky–Golay smoothing. Since the cumulative values are already quite smooth so any basic smoothing function should produce similar smoothing. In the last step smoothed value of the variable is obtained from the first derivative of smoothed cumulative value. Year with more than 50 days of missing pass go through these steps. If a year has more than 50 nan values the smoothed values are all nan. 
+This function requires an input dataframe(df) with columns in order 'time', 'year', 'doy' and 'Var'. Here 'doy' is the day of year and 'Var' is the variable of interest (eg., GPP). The data must he in daily time scale. This functions smooths variable Var in four steps. First step is to interpolate the missing value. A simple before fill and linear interpolate function is used for filling the missing values. Second step is to calculate cumulative of the variable Var for each year. In third step the cumulative curve is smoothed using spline smoothing. Users can play with the number of knots required for spline smoothing. Usually for a calender year, knots ranging from 8 to 15 are recommended. In the last step smoothed value of the variable is obtained from the first derivative of its smoothed cumulative.
 
 Parameters:
 df : a dataframe with columns : time, year, doy, Var. Var is the variable of interest
+knots: Recommended 8 to 15. knots> 15 produce wiggly output.
+
 
 Returns:
 df_smooth : the dataframe with columns time,year, doy and Var, where Var is the smoothed values
@@ -62,20 +64,16 @@ df_smooth : the dataframe with columns time,year, doy and Var, where Var is the 
 ### EasyPhenology
 
 ```python
-EasyPhenology(df, Threshold_value)
+EasyPhenology(df, Threshold_value, Smoothing,knots)
 ```
 
 This function produces phenological transition dates (PTDs) for a given dataframe(df) and a Threshold_value (0 to 1)
 
-It requires dataframe with columns in order 'time', 'year', 'doy' and 'Var'. These values 
-should be in daily time scale. This function first smooths Var using our integral smoothing method and
-then calculates phenological transition dates (PTDs). There are two methods to calculate PTDs. First is threshold method and second is the derivative method. The value of threshold should be provided in input. The derivative method looks for the maximum and minimum rate of change of GPP that are SOS and EOS of the year. 
+It requires dataframe with columns in order 'time', 'year', 'doy' and 'Var'. These values should be in daily time scale. There are two methods to calculate PTDs. First is threshold method and second is the derivative method. The Threshold_value is the fixed percentage of the annual maximum GPP and can vary from 0 to 1.  The derivative method looks for the maximum and minimum rate of change of GPP that are SOS and EOS of the year. If smoothing='True', our integral smoothing method is used, if smoothing='False', then the traditional direct smoothing method is used. 
 
-Parameters:
-df : a dataframe with columns : time, year, doy, Var. Var can be GPP, NEE, NDVI, GCC. Only Var=GPP is tested. Threshold for calculating PTDs.
 
 Returns:
-Pheno_out : the dataframe with columns "Year", "SOS", "POS", "EOS", "GSL", "SOS_der", "EOS_der","GSL_der"
+df_pheno_out : the dataframe with columns "Year", "SOS", "POS", "EOS", "GSL", "SOS_der", "EOS_der","GSL_der"
 df_smooth : the dataframe with columns time,year, doy and Var, where Var is the smoothed values of input Var
 
 
@@ -110,11 +108,17 @@ Annu Panwar
 
 Email: apanwar@bgc-jena.mpg.de
 
-EasyPhenology is currently used in a DFG funded PhenoFeedBacks project 
+EasyPhenology is currently used in a DFG funded PhenoFeedBacks project. I would like to acknowledge, Max Planck Insitute for Biogeochemistry for their support. 
 
 
 ### License
-GNU AFFERO GENERAL PUBLIC LICENSE
+The GNU General Public License v3.0
 
 ### Project status
-Initial stage, ready for use. Please contact if you are interested in sharing your results obtained from this function.
+Ready to use. Please contact if you are interested in sharing your results obtained from this function.
+
+
+### References
+
+1. Cerlymarco/tsmoothie: A python library for time-series smoothing and outlier detection in a vectorized way. [GitHub Link](https://github.com/cerlymarco/tsmoothie)
+
