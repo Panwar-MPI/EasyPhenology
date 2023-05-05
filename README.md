@@ -118,7 +118,12 @@ Ready to use. Please contact if you are interested in sharing your results obtai
 
 ### Citation
 
-If you use our functions, please cite as https://zenodo.org/badge/551388146.svg
+If you use our functions, please see the doi [badge](https://zenodo.org/badge/551388146.svg)
+DOI: 
+Zenodo Release URL: https://zenodo.org/record/7898925#.ZFTVL-xBzUJ
+
+[![DOI](https://zenodo.org/badge/551388146.svg)](https://zenodo.org/badge/latestdoi/551388146)
+
 
 ### References
 
