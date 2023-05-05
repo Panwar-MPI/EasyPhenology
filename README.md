@@ -116,6 +116,10 @@ The GNU General Public License v3.0
 Ready to use. Please contact if you are interested in sharing your results obtained from this function.
 
 
+### Citation
+
+If you use our functions, please cite as with [DOI](https://zenodo.org/badge/551388146.svg)
+
 ### References
 
 1. Cerlymarco/tsmoothie: A python library for time-series smoothing and outlier detection in a vectorized way. [GitHub Link](https://github.com/cerlymarco/tsmoothie)
