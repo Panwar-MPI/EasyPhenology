@@ -122,7 +122,7 @@ If you use our functions, please cite us
 
 [![DOI](https://zenodo.org/badge/551388146.svg)](https://zenodo.org/badge/latestdoi/551388146)
 
-DOI Link: [https://doi.org/10.5281/zenodo.7898925]{https://doi.org/10.5281/zenodo.7898925}
+DOI Link: [https://doi.org/10.5281/zenodo.7898925](https://doi.org/10.5281/zenodo.7898925)
 
 ### References
 
