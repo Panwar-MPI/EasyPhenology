@@ -118,11 +118,17 @@ Ready to use. Please contact if you are interested in sharing your results obtai
 
 ### Citation
 
-If you use our functions, please cite us
 
 [![DOI](https://zenodo.org/badge/551388146.svg)](https://zenodo.org/badge/latestdoi/551388146)
 
 DOI Link: [https://doi.org/10.5281/zenodo.7898925](https://doi.org/10.5281/zenodo.7898925)
+
+
+If you use our functions, please cite as the following:
+
+Panwar, Annu. Panwar-MPI/EasyPhenology: A python library designed to smooth the gpp time series and for obtaining
+phenological transition dates, release1, DOI: 10.5281/zenodo.7898925 (2023)
+
 
 ### References
 
