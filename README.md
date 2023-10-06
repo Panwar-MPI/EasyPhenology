@@ -129,6 +129,9 @@ If you use our functions, please cite as the following:
 Panwar, Annu. Panwar-MPI/EasyPhenology: A python library designed to smooth the GPP time series and to obtain the
 phenological transition dates, Release1, DOI: 10.5281/zenodo.7898925 (2023)
 
+Also read our publication:
+
+Panwar, Annu, Mirco Migliavacca, Jacob A. Nelson, José Cortés, Ana Bastos, Matthias Forkel, and Alexander J. Winkler. "Methodological challenges and new perspectives of shifting vegetation phenology in eddy covariance data." Scientific Reports 13, no. 1 (2023): 13885.
 
 ### References
 
